@@ -3,7 +3,7 @@ name: OSG Android Build
 on:
   push:
     branches: [ main ] # 在main分支push时触发
-    tags: [ 'v*.*.*' ] # 在版本标签推送时触发
+    tags: [ 'v1.0.0' ] # 在版本标签推送时触发
   pull_request: # 在创建PR时触发
     branches: [ main ]
 
@@ -19,10 +19,12 @@ jobs:
     name: Build for ${{ matrix.abi }}
     
     steps:
-      - name: Checkout OSG code
+      - name: Checkout specific OSG version
         uses: actions/checkout@v4
         with:
-          submodules: recursive # 递归获取子模块
+          repository: openscenegraph/OpenSceneGraph
+          ref: OpenSceneGraph-3.6.5 # 指定版本标签
+          submodules: recursive
           
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
