@@ -1,0 +1,77 @@
+name: OSG Android Build
+
+on:
+  push:
+    branches: [ main ] # 在main分支push时触发
+    tags: [ 'v*.*.*' ] # 在版本标签推送时触发
+  pull_request: # 在创建PR时触发
+    branches: [ main ]
+
+jobs:
+  build_android:
+    runs-on: ubuntu-22.04 # 指定Ubuntu最新LTS版本
+    strategy:
+      matrix:
+        abi: [arm64-v8a] # 支持的CPU架构
+        include:
+          - abi: arm64-v8a
+            platform: android-24
+    name: Build for ${{ matrix.abi }}
+    
+    steps:
+      - name: Checkout OSG code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive # 递归获取子模块
+          
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: "r26d" # 推荐的稳定版本
+          link-to-sdk: true
+          
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            git \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            freeglut3-dev \
+            libjpeg-dev \
+            libtiff-dev \
+            libpng-dev
+          
+      - name: Configure CMake
+        run: |
+          mkdir build-${{ matrix.abi }} && cd build-${{ matrix.abi }}
+          cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=${{ matrix.abi }} \
+            -DANDROID_PLATFORM=${{ matrix.platform }} \
+            -DBUILD_OSG_EXAMPLES=OFF \
+            -DBUILD_OSG_APPLICATIONS=OFF \
+            -DOSG_BUILD_PLATFORM_ANDROID=ON \
+            -DOSG_GL_PROFILE=GLES3 \
+            -DCMAKE_BUILD_TYPE=Release
+          
+      - name: Build OSG libraries
+        run: |
+          cd build-${{ matrix.abi }}
+          cmake --build . --config Release --target install -j $(nproc)
+          
+      - name: Archive Android libraries
+        uses: actions/upload-artifact@v3
+        with:
+          name: osg-android-${{ matrix.abi }}-libs
+          path: |
+            build-${{ matrix.abi }}/lib/*.so
+            build-${{ matrix.abi }}/lib/*.a
+          
+      - name: Archive Headers
+        uses: actions/upload-artifact@v3
+        with:
+          name: osg-android-${{ matrix.abi }}-headers
+          path: build-${{ matrix.abi }}/include
