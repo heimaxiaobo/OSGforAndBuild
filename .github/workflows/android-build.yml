@@ -65,7 +65,7 @@ jobs:
           cmake --build . --config Release --target install -j $(nproc)
           
       - name: Archive Android libraries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: osg-android-${{ matrix.abi }}-libs
           path: |
@@ -73,7 +73,7 @@ jobs:
             build-${{ matrix.abi }}/lib/*.a
           
       - name: Archive Headers
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: osg-android-${{ matrix.abi }}-headers
           path: build-${{ matrix.abi }}/include
